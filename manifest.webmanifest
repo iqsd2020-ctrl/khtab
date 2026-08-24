@@ -1,0 +1,32 @@
+{
+  "name": "خطب الجمعة",
+  "short_name": "خطب الجمعة",
+  "description": "قراءة والاستماع إلى مجموعة خطب الجمعة النصية والصوتية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fbf8f1",
+  "theme_color": "#008751",
+  "categories": [
+    "books",
+    "education",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "./pwa-assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./pwa-assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
