@@ -1,0 +1,155 @@
+/* cairo — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/cairo-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/cairo-2.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/cairo-3.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./fonts/cairo-4.woff") format('truetype');
+}
+
+
+/* amiri — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Amiri';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/amiri-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Amiri';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/amiri-2.woff") format('truetype');
+}
+
+
+/* aref-ruqaa — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Aref Ruqaa';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/aref-ruqaa-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Aref Ruqaa';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/aref-ruqaa-2.woff") format('truetype');
+}
+
+
+/* lateef — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Lateef';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/lateef-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Lateef';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/lateef-2.woff") format('truetype');
+}
+
+
+/* noto-naskh-arabic — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/noto-naskh-arabic-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/noto-naskh-arabic-2.woff") format('truetype');
+}
+
+
+/* reem-kufi — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Reem Kufi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/reem-kufi-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Reem Kufi';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/reem-kufi-2.woff") format('truetype');
+}
+
+
+/* scheherazade-new — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Scheherazade New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/scheherazade-new-1.woff") format('truetype');
+}
+@font-face {
+  font-family: 'Scheherazade New';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/scheherazade-new-2.woff") format('truetype');
+}
+
+
+/* material-symbols-outlined — downloaded from Google Fonts */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/material-symbols-outlined-1.woff") format('truetype');
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+}
