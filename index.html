@@ -1456,6 +1456,47 @@
                 });
             });
         }
+
+        // Material Symbols من مستودع Google الرسمي يستخدم glyphs ذات Unicode خاص
+        // وليس ligatures في ملف TTF الكامل؛ لذلك نحوّل أسماء الأيقونات إلى محارفها مباشرة.
+        const MATERIAL_SYMBOL_CODEPOINTS = Object.freeze({
+            arrow_back: 0xe5c4, arrow_forward: 0xe5c8, bedtime: 0xe1f9,
+            bookmark: 0xe866, dark_mode: 0xe51c, download: 0xe171,
+            expand_less: 0xe5ce, expand_more: 0xe5cf, font_download: 0xe167,
+            forward_10: 0xe056, graphic_eq: 0xe1b8, light_mode: 0xe518,
+            menu: 0xe5d2, menu_book: 0xea19, palette: 0xe3b7,
+            pause: 0xe034, pause_circle: 0xe035, play_arrow: 0xe037,
+            play_circle: 0xe038, replay_10: 0xe059, repeat: 0xe040,
+            search: 0xe8b6, select_all: 0xe162, tune: 0xe429,
+            volume_down: 0xe04d, volume_off: 0xe04f, volume_up: 0xe050,
+            zoom_in: 0xe8ff, zoom_out: 0xe900
+        });
+        function materializeIcon(element) {
+            if (!element || !element.classList.contains('material-symbols-outlined')) return;
+            const value = (element.textContent || '').trim();
+            const codePoint = MATERIAL_SYMBOL_CODEPOINTS[value];
+            if (!codePoint) return;
+            element.dataset.materialSymbol = value;
+            element.setAttribute('aria-hidden', 'true');
+            element.textContent = String.fromCodePoint(codePoint);
+        }
+        function materializeAllIcons(scope = document) {
+            scope.querySelectorAll('.material-symbols-outlined').forEach(materializeIcon);
+        }
+        materializeAllIcons();
+        new MutationObserver(records => {
+            records.forEach(record => {
+                if (record.type === 'childList') {
+                    if (record.target instanceof Element) materializeIcon(record.target);
+                    record.addedNodes.forEach(node => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            materializeIcon(node);
+                            materializeAllIcons(node);
+                        }
+                    });
+                }
+            });
+        }).observe(document.body, { childList: true, subtree: true });
     </script>
 </body>
 </html>

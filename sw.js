@@ -1,4 +1,4 @@
-const CACHE_NAME = 'friday-sermons-pwa-v5';
+const CACHE_NAME = 'friday-sermons-pwa-v6';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest',
