@@ -1,4 +1,4 @@
-const CACHE_NAME = 'friday-sermons-pwa-v4';
+const CACHE_NAME = 'friday-sermons-pwa-v5';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest',
@@ -16,7 +16,7 @@ const APP_SHELL = [
   './pwa-assets/fonts/cairo-4.woff',
   './pwa-assets/fonts/lateef-1.woff',
   './pwa-assets/fonts/lateef-2.woff',
-  './pwa-assets/fonts/material-symbols-outlined-1.woff',
+  './pwa-assets/fonts/MaterialSymbolsOutlined.ttf',
   './pwa-assets/fonts/noto-naskh-arabic-1.woff',
   './pwa-assets/fonts/noto-naskh-arabic-2.woff',
   './pwa-assets/fonts/reem-kufi-1.woff',
