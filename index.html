@@ -9,6 +9,7 @@
     <title>خطب الجمعة</title>
     
     <!-- أصول محلية: الخطوط العربية وأيقونات Material Symbols تعمل دون طلب Google Fonts -->
+    <link rel="preload" href="./pwa-assets/fonts/amiri-1.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="stylesheet" href="./pwa-assets/fonts.css">
     <link rel="icon" type="image/png" sizes="32x32" href="./pwa-assets/favicon-32.png">
     <link rel="manifest" href="./manifest.webmanifest">
@@ -255,7 +256,7 @@
         #mainPage.background { transform: translateX(20%) scale(0.95); opacity: 0; pointer-events: none; }
 
         .wheel-container {
-            position: relative; width: 100%; max-width: 600px; height: 100vh;
+            position: relative; width: 100%; max-width: 600px; height: 100vh; margin: 0 auto;
             perspective: 1000px; display: flex; align-items: center; justify-content: center;
             -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);
             mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);
@@ -655,18 +656,8 @@
                 </div>
             `;
             item.addEventListener('click', () => {
-                if (dragTotalDeltaY > 5) return; 
-                let normalizedCurrent = mod(currentOffset, N);
-                let relativeOffset = index - normalizedCurrent;
-                
-                if (relativeOffset > N / 2) relativeOffset -= N;
-                else if (relativeOffset < -N / 2) relativeOffset += N;
-                
-                if (Math.abs(relativeOffset) < 0.5) {
-                    openReadingPage(index, ordinal);
-                } else {
-                    targetOffset = Math.round(currentOffset + relativeOffset);
-                }
+                if (dragTotalDeltaY > 5) return;
+                openReadingPage(index, ordinal);
             });
             wheelContainer.appendChild(item);
             domItems.push(item);
@@ -866,8 +857,18 @@
             while (normalized.endsWith(' ')) { normalized = normalized.slice(0, -1); map.pop(); }
             return { normalized: normalized.toLowerCase(), map };
         }
+        const normalizedMapCache = new Map();
+        function getCachedNormalizedMapping(value) {
+            const source = String(value || '');
+            let mapped = normalizedMapCache.get(source);
+            if (!mapped) {
+                mapped = normalizedWithMap(source);
+                normalizedMapCache.set(source, mapped);
+            }
+            return mapped;
+        }
         function findMappedRanges(value, normalizedNeedle) {
-            const mapped = normalizedWithMap(value);
+            const mapped = getCachedNormalizedMapping(value);
             const ranges = [];
             let searchFrom = 0;
             while (searchFrom < mapped.normalized.length) {
@@ -882,8 +883,8 @@
             }
             return ranges;
         }
-        function findSearchRanges(value, query) {
-            const normalizedQuery = normalizeArabicText(query);
+        function findSearchRanges(value, query, normalizedQueryOverride = null) {
+            const normalizedQuery = normalizedQueryOverride ?? normalizeArabicText(query);
             if (!normalizedQuery) return [];
             const exactRanges = findMappedRanges(value, normalizedQuery);
             if (exactRanges.length || !normalizedQuery.includes(' ')) return exactRanges;
@@ -920,12 +921,12 @@
             const suffix = end < source.length ? '…' : '';
             return prefix + highlightedSearchHtml(source.slice(start, end), query) + suffix;
         }
-        function searchMatchesParagraph(paragraph, query) {
-            const terms = normalizeArabicText(query).split(' ').filter(Boolean);
+        function searchMatchesParagraph(paragraph, normalizedQuery) {
+            const terms = normalizedQuery.split(' ').filter(Boolean);
             return terms.length > 0 && terms.every(term => paragraph.normalized.includes(term));
         }
-        function searchMatchCount(text, query) {
-            return findSearchRanges(text, query).length;
+        function searchMatchCount(text, query, normalizedQuery = null) {
+            return findSearchRanges(text, query, normalizedQuery).length;
         }
         function clearSearchHighlights() {
             readingContent.querySelectorAll('mark.search-highlight').forEach(mark => mark.replaceWith(document.createTextNode(mark.textContent)));
@@ -953,9 +954,16 @@
             searchInput.value = '';
             searchSummary.textContent = '';
         });
-        searchInput.addEventListener('input', event => renderSearchResults(event.target.value));
+        let searchRenderId = 0;
+        let searchRenderTimer = null;
+        searchInput.addEventListener('input', event => {
+            const rawQuery = event.target.value;
+            clearTimeout(searchRenderTimer);
+            searchRenderTimer = setTimeout(() => renderSearchResults(rawQuery), 120);
+        });
 
         function renderSearchResults(rawQuery) {
+            const renderId = ++searchRenderId;
             const query = String(rawQuery || '').trim();
             searchResults.innerHTML = '';
             if (!query) {
@@ -963,41 +971,63 @@
                 searchResults.innerHTML = '<div class="search-empty">اكتب كلمة أو عبارة لعرض مواضعها داخل الخطب.</div>';
                 return;
             }
+            const normalizedQuery = normalizeArabicText(query);
             const matches = [];
-            searchIndex.forEach(entry => entry.paragraphs.forEach(paragraph => {
-                if (searchMatchesParagraph(paragraph, query)) {
-                    matches.push({ ...paragraph, sermonIndex: entry.sermonIndex, sermon: sermonData[entry.sermonIndex], count: searchMatchCount(paragraph.text, query) });
+            let entryIndex = 0;
+            let paragraphIndex = 0;
+            searchSummary.textContent = 'جارٍ البحث داخل نصوص الخطب…';
+            const processChunk = () => {
+                if (renderId !== searchRenderId) return;
+                const startedAt = performance.now();
+                while (entryIndex < searchIndex.length && performance.now() - startedAt < 8) {
+                    const entry = searchIndex[entryIndex];
+                    while (paragraphIndex < entry.paragraphs.length) {
+                        const paragraph = entry.paragraphs[paragraphIndex++];
+                        if (searchMatchesParagraph(paragraph, normalizedQuery)) {
+                            matches.push({ ...paragraph, sermonIndex: entry.sermonIndex, sermon: sermonData[entry.sermonIndex], count: null });
+                        }
+                        if (performance.now() - startedAt >= 8) break;
+                    }
+                    if (paragraphIndex >= entry.paragraphs.length) { entryIndex += 1; paragraphIndex = 0; }
+                    if (performance.now() - startedAt >= 8) break;
                 }
-            }));
-            searchSummary.textContent = matches.length ? `عُثر على ${matches.length} موضعًا في ${new Set(matches.map(match => match.sermonIndex)).size} خطبة.` : 'لم يُعثر على نتائج مطابقة.';
-            if (!matches.length) {
-                searchResults.innerHTML = '<div class="search-empty">لا توجد نتائج مطابقة داخل نصوص الخطب.<br>جرّب كلمة أخرى أو عبارة أقصر.</div>';
-                return;
-            }
-            const maxResults = 120;
-            matches.slice(0, maxResults).forEach(match => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'search-item';
-                button.innerHTML = `<span class="search-item-icon material-symbols-outlined">menu_book</span><span class="search-result-copy"><strong class="search-result-title"></strong><small class="search-result-meta"></small><span class="search-result-snippet"></span></span><span class="search-result-arrow material-symbols-outlined">arrow_back</span>`;
-                button.querySelector('.search-result-title').textContent = match.sermon.title || `الجمعة ${arabicOrdinals[match.sermonIndex]}`;
-                button.querySelector('.search-result-meta').textContent = `${match.sermon.date || ''} · الفقرة ${match.paragraphIndex + 1} · ${match.count || 1} تطابق`;
-                button.querySelector('.search-result-snippet').innerHTML = createSearchSnippet(match.text, query);
-                button.addEventListener('click', () => {
-                    searchOverlay.classList.remove('active');
-                    searchInput.value = '';
-                    searchSummary.textContent = '';
-                    pendingSearchTarget = { query, paragraphIndex: match.paragraphIndex };
-                    openReadingPage(match.sermonIndex, arabicOrdinals[match.sermonIndex], pendingSearchTarget);
+                if (entryIndex < searchIndex.length) {
+                    setTimeout(processChunk, 0);
+                    return;
+                }
+                if (renderId !== searchRenderId) return;
+                searchSummary.textContent = matches.length ? `عُثر على ${matches.length} موضعًا في ${new Set(matches.map(match => match.sermonIndex)).size} خطبة.` : 'لم يُعثر على نتائج مطابقة.';
+                if (!matches.length) {
+                    searchResults.innerHTML = '<div class="search-empty">لا توجد نتائج مطابقة داخل نصوص الخطب.<br>جرّب كلمة أخرى أو عبارة أقصر.</div>';
+                    return;
+                }
+                const maxResults = 40;
+                matches.slice(0, maxResults).forEach(match => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'search-item';
+                    button.innerHTML = `<span class="search-item-icon material-symbols-outlined">menu_book</span><span class="search-result-copy"><strong class="search-result-title"></strong><small class="search-result-meta"></small><span class="search-result-snippet"></span></span><span class="search-result-arrow material-symbols-outlined">arrow_back</span>`;
+                    button.querySelector('.search-result-title').textContent = match.sermon.title || `الجمعة ${arabicOrdinals[match.sermonIndex]}`;
+                    const matchCount = searchMatchCount(match.text, query, normalizedQuery);
+                    button.querySelector('.search-result-meta').textContent = `${match.sermon.date || ''} · الفقرة ${match.paragraphIndex + 1} · ${matchCount || 1} تطابق`;
+                    button.querySelector('.search-result-snippet').innerHTML = createSearchSnippet(match.text, query);
+                    button.addEventListener('click', () => {
+                        searchOverlay.classList.remove('active');
+                        searchInput.value = '';
+                        searchSummary.textContent = '';
+                        pendingSearchTarget = { query, paragraphIndex: match.paragraphIndex };
+                        openReadingPage(match.sermonIndex, arabicOrdinals[match.sermonIndex], pendingSearchTarget);
+                    });
+                    searchResults.appendChild(button);
                 });
-                searchResults.appendChild(button);
-            });
-            if (matches.length > maxResults) {
-                const limit = document.createElement('div');
-                limit.className = 'search-result-limit';
-                limit.textContent = `يُعرض أول ${maxResults} نتيجة من أصل ${matches.length}. حدّد عبارة أطول لتضييق النتائج.`;
-                searchResults.appendChild(limit);
-            }
+                if (matches.length > maxResults) {
+                    const limit = document.createElement('div');
+                    limit.className = 'search-result-limit';
+                    limit.textContent = `يُعرض أول ${maxResults} نتيجة من أصل ${matches.length}. حدّد عبارة أطول لتضييق النتائج.`;
+                    searchResults.appendChild(limit);
+                }
+            };
+            processChunk();
         }
 
         // --- 4. إدارة القراءة والأدوات ---
@@ -1041,6 +1071,7 @@
             return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : `${minutes}:${String(secs).padStart(2, '0')}`;
         }
 
+        let audioLoadFailed = false;
         function updatePlayerUI() {
             const playing = !sermonAudio.paused;
             isPlaying = playing;
@@ -1056,7 +1087,9 @@
             playerProgress.value = progress;
             playerProgress.style.setProperty('--progress', `${progress}%`);
             repeatBtn.classList.toggle('active', sermonAudio.loop);
-            if (sleepTimerEnd > Date.now()) {
+            if (audioLoadFailed) {
+                playerStatus.textContent = 'تعذر تحميل الصوت؛ تحقق من الاتصال أو جرّب لاحقًا';
+            } else if (sleepTimerEnd > Date.now()) {
                 const remaining = Math.ceil((sleepTimerEnd - Date.now()) / 60000);
                 playerStatus.textContent = `مؤقت النوم: ${remaining} دقيقة`;
             } else if (playing) {
@@ -1107,12 +1140,13 @@
                 setTimeout(() => { readingContent.scrollTop = Number(savedPosition.scrollTop) || 0; }, 0);
             }
             sermonAudio.pause();
-            sermonAudio.src = sermon?.audio || '';
+            audioLoadFailed = false;
+            sermonAudio.removeAttribute('src');
+            sermonAudio.dataset.audioSrc = sermon?.audio || '';
             sermonAudio.loop = false;
             sermonAudio.currentTime = 0;
             downloadAudioBtn.href = sermon?.audio || '#';
             downloadAudioBtn.setAttribute('download', `خطب الجمعة - ${sermon?.title || ordinal}.mp3`);
-            sermonAudio.load();
             sermonAudio.playbackRate = Number(playbackRate.value) || 1;
             updatePlayerUI();
             mainPage.classList.add('background');
@@ -1121,7 +1155,12 @@
             // إغلاق الأدوات تلقائياً عند الدخول لخطبة جديدة
             document.getElementById('toolsPanel').classList.remove('active');
         }
-        backBtn.addEventListener('click', () => { mainPage.classList.remove('background'); readingPage.classList.remove('active'); });
+        backBtn.addEventListener('click', () => {
+            sermonAudio.pause();
+            mainPage.classList.remove('background');
+            readingPage.classList.remove('active');
+            updatePlayerUI();
+        });
 
         const themeToggleBtns = [document.getElementById('themeToggleBtn'), document.getElementById('readingThemeBtn')];
         const themeIcons = [document.getElementById('themeIcon'), document.getElementById('readingThemeIcon')];
@@ -1233,8 +1272,13 @@
             };
             const positions = getSavedReadingPositions().filter(item => item.sermonIndex !== currentSermonIndex);
             positions.unshift(saved);
-            localStorage.setItem('fridaySermonReadingPositions', JSON.stringify(positions));
-            localStorage.removeItem('fridaySermonReadingPosition');
+            try {
+                localStorage.setItem('fridaySermonReadingPositions', JSON.stringify(positions));
+                localStorage.removeItem('fridaySermonReadingPosition');
+            } catch (error) {
+                console.warn('تعذر حفظ موضع القراءة:', error);
+                playerStatus.textContent = 'تعذر حفظ موضع القراءة على هذا الجهاز';
+            }
             closeTextContextMenu();
         });
         selectTextBtn.addEventListener('click', () => {
@@ -1288,6 +1332,46 @@
         });
 
         // --- بناء قائمة الخطوط ---
+        function getFontFamilyName(fontValue) {
+            return String(fontValue || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+        }
+        const localFontFiles = {
+            'Amiri': './pwa-assets/fonts/amiri-1.ttf',
+            'Noto Naskh Arabic': './pwa-assets/fonts/noto-naskh-arabic-1.ttf',
+            'Scheherazade New': './pwa-assets/fonts/scheherazade-new-1.ttf',
+            'Lateef': './pwa-assets/fonts/lateef-1.ttf',
+            'Aref Ruqaa': './pwa-assets/fonts/aref-ruqaa-1.ttf',
+            'Reem Kufi': './pwa-assets/fonts/reem-kufi-1.ttf'
+        };
+        const localFontLoaders = new Map();
+        function ensureLocalFontLoaded(family) {
+            const file = localFontFiles[family];
+            if (!file || typeof FontFace === 'undefined') return Promise.resolve();
+            if (!localFontLoaders.has(family)) {
+                const loader = new FontFace(family, `url("${file}") format("truetype")`, { weight: '400', style: 'normal' })
+                    .load()
+                    .then(fontFace => { document.fonts.add(fontFace); return fontFace; })
+                    .catch(error => { console.warn(`تعذر تحميل الخط المحلي ${family}:`, error); return null; });
+                localFontLoaders.set(family, loader);
+            }
+            return localFontLoaders.get(family);
+        }
+        let fontApplyToken = 0;
+        async function applyReadingFont(fontValue, selectedOption = null) {
+            const token = ++fontApplyToken;
+            const family = String(fontValue || "'Amiri', serif");
+            readingContent.style.setProperty('font-family', family, 'important');
+            document.querySelectorAll('.font-option').forEach(option => option.classList.toggle('selected', option.dataset.fontValue === family));
+            if (selectedOption) selectedOption.classList.add('selected');
+            const familyName = getFontFamilyName(family);
+            await ensureLocalFontLoaded(familyName);
+            try {
+                await document.fonts.load(`1.3rem "${familyName}"`);
+            } catch (error) {
+                console.warn('تعذر تحميل الخط المحلي:', error);
+            }
+            if (token === fontApplyToken) readingContent.style.setProperty('font-family', family, 'important');
+        }
         const fontsList = [
             { name: "أميري (Amiri)", value: "'Amiri', serif" },
             { name: "نوتو نسخ (Noto Naskh)", value: "'Noto Naskh Arabic', serif" },
@@ -1301,13 +1385,20 @@
             const div = document.createElement('div');
             div.className = `font-option ${index === 0 ? 'selected' : ''}`;
             div.dataset.fontValue = font.value;
+            div.setAttribute('role', 'button');
+            div.tabIndex = 0;
             div.style.fontFamily = font.value;
             div.textContent = font.name;
-            div.addEventListener('click', () => {
-                readingContent.style.fontFamily = font.value;
-                document.querySelectorAll('.font-option').forEach(el => el.classList.remove('selected'));
-                div.classList.add('selected');
+            const chooseFont = () => {
+                void applyReadingFont(font.value, div);
                 savePreferences();
+            };
+            div.addEventListener('click', chooseFont);
+            div.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    chooseFont();
+                }
             });
             fontPanel.appendChild(div);
         });
@@ -1349,10 +1440,7 @@
                 currentFontSize = Math.min(2.5, Math.max(0.8, Number(preferences.fontSize)));
                 readingContent.style.fontSize = `${currentFontSize}rem`;
             }
-            if (preferences.fontFamily) {
-                readingContent.style.fontFamily = preferences.fontFamily;
-                document.querySelectorAll('.font-option').forEach(option => option.classList.toggle('selected', option.dataset.fontValue === preferences.fontFamily));
-            }
+            void applyReadingFont(preferences.fontFamily || "'Amiri', serif");
             if (preferences.textColor) {
                 readingContent.style.color = preferences.textColor;
                 document.querySelectorAll('.color-swatch').forEach(option => option.classList.toggle('selected', option.dataset.colorValue === preferences.textColor));
@@ -1377,6 +1465,11 @@
 
         let isPlaying = false; const audioIcon = document.getElementById('audioIcon');
         async function togglePlayback() {
+            const audioSource = sermonAudio.dataset.audioSrc || '';
+            if (!sermonAudio.src && audioSource) {
+                audioLoadFailed = false;
+                sermonAudio.src = audioSource;
+            }
             if (!sermonAudio.src) return;
             try {
                 if (sermonAudio.paused) await sermonAudio.play();
@@ -1419,6 +1512,10 @@
         sermonAudio.addEventListener('pause', updatePlayerUI);
         sermonAudio.addEventListener('ended', updatePlayerUI);
         sermonAudio.addEventListener('volumechange', updatePlayerUI);
+        sermonAudio.addEventListener('error', () => {
+            audioLoadFailed = true;
+            updatePlayerUI();
+        });
         setInterval(() => { if (sleepTimerEnd) updatePlayerUI(); }, 30000);
 
 
@@ -1495,9 +1592,10 @@
             zoom_out: 'M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400ZM280-540v-80h200v80H280Z',
         });
         function setMaterialIcon(element, name) {
-            if (!element || !element.classList.contains('material-symbols-outlined') || element.querySelector('svg.material-symbols-svg')) return;
+            if (!element || !element.classList.contains('material-symbols-outlined')) return;
             const path = MATERIAL_SYMBOL_PATHS[name];
             if (!path) return;
+            if (element.dataset.materialSymbol === name && element.querySelector(':scope > svg.material-symbols-svg')) return;
             element.dataset.materialSymbol = name;
             element.setAttribute('aria-hidden', 'true');
             element.replaceChildren();
@@ -1511,7 +1609,7 @@
             element.appendChild(svg);
         }
         function materializeIcon(element) {
-            if (!element || !element.classList.contains('material-symbols-outlined') || element.querySelector('svg.material-symbols-svg')) return;
+            if (!element || !element.classList.contains('material-symbols-outlined')) return;
             const name = element.dataset.materialSymbol || (element.textContent || '').trim();
             if (name && MATERIAL_SYMBOL_PATHS[name]) setMaterialIcon(element, name);
         }

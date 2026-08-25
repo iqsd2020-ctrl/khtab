@@ -34,14 +34,14 @@
   font-family: 'Amiri';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/amiri-1.ttf") format('truetype');
 }
 @font-face {
   font-family: 'Amiri';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/amiri-2.ttf") format('truetype');
 }
 
@@ -51,14 +51,14 @@
   font-family: 'Aref Ruqaa';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/aref-ruqaa-1.ttf") format('truetype');
 }
 @font-face {
   font-family: 'Aref Ruqaa';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/aref-ruqaa-2.ttf") format('truetype');
 }
 
@@ -68,14 +68,14 @@
   font-family: 'Lateef';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/lateef-1.ttf") format('truetype');
 }
 @font-face {
   font-family: 'Lateef';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/lateef-2.ttf") format('truetype');
 }
 
@@ -85,14 +85,14 @@
   font-family: 'Noto Naskh Arabic';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/noto-naskh-arabic-1.ttf") format('truetype');
 }
 @font-face {
   font-family: 'Noto Naskh Arabic';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/noto-naskh-arabic-2.ttf") format('truetype');
 }
 
@@ -102,14 +102,14 @@
   font-family: 'Reem Kufi';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/reem-kufi-1.ttf") format('truetype');
 }
 @font-face {
   font-family: 'Reem Kufi';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/reem-kufi-2.ttf") format('truetype');
 }
 
@@ -119,14 +119,14 @@
   font-family: 'Scheherazade New';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/scheherazade-new-1.ttf") format('truetype');
 }
 @font-face {
   font-family: 'Scheherazade New';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url("./fonts/scheherazade-new-2.ttf") format('truetype');
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'friday-sermons-pwa-v8';
+const CACHE_NAME = 'friday-sermons-pwa-v13';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest',
@@ -46,8 +46,11 @@ self.addEventListener('fetch', event => {
   const requestURL = new URL(event.request.url);
   if (requestURL.origin !== self.location.origin) return;
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-      if (!response || response.status !== 200 || response.type !== 'basic') return response;
+    caches.match(event.request, { ignoreSearch: event.request.mode === 'navigate' }).then(cached => cached || fetch(event.request).then(response => {
+      if (!response || response.status < 200 || response.status >= 300 || response.type !== 'basic') {
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
+        return response;
+      }
       const copy = response.clone();
       caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
       return response;
